@@ -8,7 +8,7 @@ import isConstructor from './helpers/isConstrutor';
 const router = express.Router();
 const cwd = process.cwd();
 
-const mapRoutes = (routes, pathToController) => {
+const mapRoutes = (routes, pathToController, routesFunction) => {
   let requestMethodPath;
   let requestMethod;
 
@@ -46,14 +46,18 @@ const mapRoutes = (routes, pathToController) => {
       contr = new handler();
     }
 
+    const routePath = router.route(myPath);
+    if (routesFunction) {
+      routePath.all((req, res, next) => routesFunction(req, res, next));
+    }
     if (requestMethod === 'get') {
-      router.route(myPath).get(contr[controllerMethod]);
+      routePath.get(contr[controllerMethod]);
     } else if (requestMethod === 'post') {
-      router.route(myPath).post(contr[controllerMethod]);
+      routePath.post(contr[controllerMethod]);
     } else if (requestMethod === 'put') {
-      router.route(myPath).put(contr[controllerMethod]);
+      routePath.put(contr[controllerMethod]);
     } else if (requestMethod === 'delete') {
-      router.route(myPath).delete(contr[controllerMethod]);
+      routePath.delete(contr[controllerMethod]);
     }
   });
 
