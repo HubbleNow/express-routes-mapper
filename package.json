@@ -30,7 +30,7 @@
     "url": "https://github.com/hubblenow/express-routes-mapper/issues"
   },
   "homepage": "https://github.com/hubblenow/express-routes-mapper#readme",
-  "author": "Santeri Vesalainen <santeri.vesalainen@> (https://github.com/santeriv/)",
+  "author": "Santeri Vesalainen <santeri.vesalainen@hubble.fi> (https://github.com/santeriv/)",
   "license": "MIT",
   "dependencies": {
     "babel-core": "^6.23.1",
