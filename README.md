@@ -2,7 +2,7 @@
 
 Originally forked from: https://github.com/aichbauer/express-routes-mapper#readme 
 
-[![Build Status](https://travis-ci.org/hubblenow/express-routes-mapper.svg?branch=master)](https://travis-ci.org/hubblenow/express-routes-mapper) [![Coverage Status](https://coveralls.io/repos/github/hubblenow/express-routes-mapper/badge.svg)](https://coveralls.io/github/hubblenow/express-routes-mapper)
+[![Build Status](https://travis-ci.org/HubbleNow/express-routes-mapper.svg?branch=master)](https://travis-ci.org/HubbleNow/express-routes-mapper) [![Coverage Status](https://coveralls.io/repos/github/HubbleNow/express-routes-mapper/badge.svg)](https://coveralls.io/github/HubbleNow/express-routes-mapper)
 
 > A simple package to map your routes for your expressjs application
 
