@@ -1,6 +1,6 @@
 {
   "name": "express-routes-mapper",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "a small mapper for express routes",
   "main": "lib/index.js",
   "scripts": {
@@ -12,7 +12,8 @@
     "prepublish": "npm run babel",
     "precommit": "npm run lint",
     "prepush": "npm test",
-    "babel": "babel src --out-dir lib"
+    "babel": "babel src --out-dir lib",
+    "test-ava-watch": "npm run babel && ava --fail-fast -c 4 -v --watch"
   },
   "keywords": [
     "express",
@@ -23,13 +24,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aichbauer/express-routes-mapper.git"
+    "url": "git+https://github.com/hubblenow/express-routes-mapper.git"
   },
   "bugs": {
-    "url": "https://github.com/aichbauer/express-routes-mapper/issues"
+    "url": "https://github.com/hubblenow/express-routes-mapper/issues"
   },
-  "homepage": "https://github.com/rudolfsonjunior/express-routes-mapper#readme",
-  "author": "Lukas Aichbauer  <l.aichbauer@gmail.com> (https://github.com/aichbauer/)",
+  "homepage": "https://github.com/hubblenow/express-routes-mapper#readme",
+  "author": "Santeri Vesalainen <santeri.vesalainen@> (https://github.com/santeriv/)",
   "license": "MIT",
   "dependencies": {
     "babel-core": "^6.23.1",

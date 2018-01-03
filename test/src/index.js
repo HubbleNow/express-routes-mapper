@@ -1,5 +1,7 @@
 import test from 'ava';
-import mapRoutes from '../../lib/index';
+import * as mapRoutez from '../../lib/index';
+import { access } from 'fs';
+
 
 const routes = {
   'GET /user': 'ClassExportDefault.get',
@@ -9,36 +11,43 @@ const routes = {
 };
 
 const authRoutes = {
-  'POST /user/:name': 'ClassModuleExports.create',
-  'PUT /user/:name/:id': 'FunctionModuleExports.update',
-  'DELETE /user/:name/:id': 'Function.Export.Default.destroy',
+  'POST /user/:name': { controller: 'ClassModuleExports.create', accessRights: ['SUPER'] },
+  'PUT /user/:name/:id': { controller: 'FunctionModuleExports.update', accessRights: ['SUPER'] },
+  'DELETE /user/:name/:id': { controller: 'Function.Export.Default.destroy', accessRights: ['SUPER'] },
 };
 
 const lessAuthRoutes = {
-  'GET /user': 'ClassExportDefault.get',
-  'GET /userAuthOk': 'ClassExportDefault.get',
+  'GET /user': { controller: 'ClassExportDefault.get' },
+  'GET /userAuthOk': { controller: 'ClassExportDefault.get' },
 };
 
 const nonAuthRoutes = {
-  'GET /userOk': 'ClassExportDefault.get',
+  'GET /userOk': { controller: 'ClassExportDefault.get' },
 };
 
 const bodyParser = require('body-parser');
 const express = require('express');
 const request = require('supertest');
 
+let expressApp;
+
+
+test.before(async () => {
+  expressApp = await express();// eslint-disable-line
+  expressApp.use(bodyParser.urlencoded({ extended: false }));
+  expressApp.use(bodyParser.json());
+});
 
 test.beforeEach(async (t) => {
-  const mapR = require('../../lib/index');
-  const app = await express();// eslint-disable-line
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(bodyParser.json());
-  t.context.express = app;// eslint-disable-line
-  t.context.mapRoutes = mapR; // eslint-disable-line
+  t.context.mapRoutes = mapRoutez.mapRoutes;// eslint-disable-line
+  mapRoutez.resetRouter(); // TODO: Does not work why??????
   return t.context.mapRoutes;
 });
 
-test('testing', async (t) => {
+test(async function testBasicRouterStackContents(t) {
+  const mapRoutes = t.context.mapRoutes;
+  mapRoutez.resetRouter();// workaround see beforeEach
+
   const router = mapRoutes(routes, 'test/fixtures/controllers/');
 
   // CLASS EXPORT DEFAULT
@@ -90,11 +99,12 @@ test('testing', async (t) => {
   t.is('function', typeof (router.stack[3].route.stack[0].handle));
 
   t.is('function', typeof (router));
-
-  router.stack = [];
 });
 
-test('testing with multiple routes mappings count', async (t) => {
+test(async function testWithMultipleRoutesMappingsCount(t) {
+  const mapRoutes = t.context.mapRoutes;
+  mapRoutez.resetRouter();// workaround see beforeEach
+
   const superStrictRouter = mapRoutes(authRoutes, 'test/fixtures/controllers/');
   t.truthy(superStrictRouter.stack.length === 3);
   const lessStrictRouter = mapRoutes(lessAuthRoutes, 'test/fixtures/controllers/');
@@ -112,25 +122,28 @@ test('testing with multiple routes mappings count', async (t) => {
   t.truthy(openRouter.stack.length === 0);
 });
 
-test('testing with multiple routes mappings that correct all-route mapping is used', async (t) => {
-  const mapRoutess = t.context.mapRoutes;
-  const superStrictRouter = mapRoutess(authRoutes, 'test/fixtures/controllers/', (req, res, next) => { console.log('authRoutes'); return req.header('Authorization') === 'SECUDER' ? next() : res.status(401).json({ msg: 'Mein got' }); });
-  const lessStrictRouter = mapRoutess(lessAuthRoutes, 'test/fixtures/controllers/', (req, res, next) => { console.log('lessAuthRoutes'); return req.header('Authorization') === 'BANGBANG' ? next() : res.status(401).json({ msg: 'You are welcome, almost!' }); });
-  const openRouter = mapRoutess(nonAuthRoutes, 'test/fixtures/controllers/', (req, res, next) => { console.log('The way is open'); return next(); });
+test(async function testWithMultipleRoutesMappingsThatRouteMappingIsUsed(t) {
+  const mapRoutes = t.context.mapRoutes;
+  mapRoutez.resetRouter();// workaround see beforeEach
+  const randPart = `${Math.floor(Math.random() * 100000000)}${process.pid}`;
+
+  /* BASICALLY using mapRoutes multiple times is 'wrong by design' See stack-lengths for example !!! */
+  const authRoutesCopy = Object.assign({}, authRoutes);
+  const superStrictRouter = mapRoutes(authRoutesCopy, 'test/fixtures/controllers/', (req, res, next) => { console.log('authRoutes'); return req.header('Authorization') === 'SECUDER' ? next() : res.status(401).json({ msg: 'Mein got' }); });
+  const lessStrictRouter = mapRoutes(lessAuthRoutes, 'test/fixtures/controllers/', (req, res, next) => { console.log('lessAuthRoutes'); return req.header('Authorization') === 'BANGBANG' ? next() : res.status(401).json({ msg: 'You are welcome, almost!' }); });
+  const openRouter = mapRoutes(nonAuthRoutes, 'test/fixtures/controllers/', (req, res, next) => { console.log('The way is open'); return next(); });
 
   t.is('function', typeof (superStrictRouter));
   t.is('function', typeof (lessStrictRouter));
   t.is('function', typeof (openRouter));
 
-  const testapp = t.context.express;
-
-  testapp.use('/sec', superStrictRouter);
-  testapp.use('/semipub', lessStrictRouter);
-  testapp.use('/pub', openRouter);
+  expressApp.use(`/sec${randPart}`, superStrictRouter);
+  expressApp.use(`/semipub${randPart}`, lessStrictRouter);
+  expressApp.use(`/pub${randPart}`, openRouter);
 
   const username = 'MR. USER';
-  let authResponse = await request(testapp)
-    .post('/sec/user/BANGBANG')
+  let authResponse = await request(expressApp)
+    .post(`/sec${randPart}/user/BANGBANG`)
     .set('Accept', /json/)
     .set('Content-Type', 'application/json')
     .send({ name: username });
@@ -138,8 +151,8 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.truthy(authResponse.body.msg);
   t.is(authResponse.body.msg, 'Mein got');
 
-  authResponse = await request(testapp)
-    .post('/sec/user/BANGBANG')
+  authResponse = await request(expressApp)
+    .post(`/sec${randPart}/user/BANGBANG`)
     .set('Accept', /json/)
     .set('Authorization', 'SECUDER')
     .set('Content-Type', 'application/json')
@@ -148,8 +161,8 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.truthy(authResponse.text);
   t.is(authResponse.text, `created user: ${username}`);
 
-  const lessAuthResponse = await request(testapp)
-    .get('/semipub/user')
+  const lessAuthResponse = await request(expressApp)
+    .get(`/semipub${randPart}/user`)
     .set('Accept', /json/)
     .set('Authorization', 'BANGBANG')
     .set('Content-Type', 'application/json');
@@ -157,8 +170,8 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.truthy(lessAuthResponse.text);
   t.is(lessAuthResponse.text, 'get user');
 
-  const fkdUpAuthResponse = await request(testapp)
-    .post('/semipub/user/BANGBANG')// route is bound to /sec yet the route seems to be available in other express prefix binding /semipub !!!! bug ??
+  const fkdUpAuthResponse = await request(expressApp)
+    .post(`/semipub${randPart}/user/BANGBANG`)// route is bound to /sec yet the route seems to be available in other express prefix binding /semipub !!!! bug ??
     .set('Accept', /json/)
     .set('Content-Type', 'application/json')
     .set('Authorization', 'BANGBANG')
@@ -167,8 +180,8 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.truthy(fkdUpAuthResponse.body.msg);
   t.is(fkdUpAuthResponse.body.msg, 'Mein got');// see comment above why not 'You are welcome, almost!'
 
-  authResponse = await request(testapp)
-    .post('/sec/user/BANGBANG')
+  authResponse = await request(expressApp)
+    .post(`/sec${randPart}/user/BANGBANG`)
     .set('Accept', /json/)
     .set('Content-Type', 'application/json')
     .send();
@@ -176,16 +189,16 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.truthy(authResponse.body.msg);
   t.is(authResponse.body.msg, 'Mein got');
 
-  const openResponse = await request(testapp)
-  .get('/pub/userOk/')
+  const openResponse = await request(expressApp)
+  .get(`/pub${randPart}/userOk/`)
   .set('Accept', /json/)
   .set('Content-Type', 'application/json');
   t.is(openResponse.status, 200, openResponse.text);
   t.truthy(openResponse.text);
   t.is(openResponse.text, 'get user');
 
-  authResponse = await request(testapp)
-    .post('/pub/user/BANGBANG')// route is bound to /sec yet the route seems to be available in other express prefix binding /pub !!!! bug??
+  authResponse = await request(expressApp)
+    .post(`/pub${randPart}/user/BANGBANG`)// route is bound to /sec yet the route seems to be available in other express prefix binding /pub !!!! bug??
     .set('Accept', /json/)
     .set('Content-Type', 'application/json')
     .set('Authorization', 'SECUDER')
@@ -193,6 +206,85 @@ test('testing with multiple routes mappings that correct all-route mapping is us
   t.is(authResponse.status, 200, authResponse.text);
   t.truthy(authResponse.text);
   t.is(authResponse.text, `created user: ${username}`);
-
-  superStrictRouter.stack = [];
 });
+
+test(async function testAccessRightsWithAccessRightedRoutes(t) {
+  const mapRoutes = t.context.mapRoutes;
+  const randPart = `${Math.floor(Math.random() * 100000000)}${process.pid}`;
+  mapRoutez.resetRouter();// workaround see beforeEach
+
+  const theRouter = mapRoutes(authRoutes, 'test/fixtures/controllers/', (req, res, next, accessRights) => res.status(403).json({ msg: `Required one of access rights: ${accessRights}` }));
+  expressApp.use(`/sec${randPart}`, theRouter);
+  t.truthy(theRouter.stack.length === 3);
+
+  const username = 'MR. USER';
+  const authResponse = await request(expressApp)
+    .post(`/sec${randPart}/user/BANGBANG`)
+    .set('Accept', /json/)
+    .set('Content-Type', 'application/json')
+    .send({ name: username });
+  t.is(authResponse.status, 403, authResponse.text);
+  t.truthy(authResponse.body.msg);
+  t.is(authResponse.body.msg, 'Required one of access rights: SUPER');
+});
+
+test(async function testAccessRightsWithAllRoutes(t) {
+  const mapRoutes = t.context.mapRoutes;
+  const randPart = `${Math.floor(Math.random() * 100000000)}${process.pid}`;
+  mapRoutez.resetRouter();// workaround see beforeEach
+
+  const theRouterRestricted = mapRoutes(authRoutes, 'test/fixtures/controllers/', (req, res, next, accessRights) => {
+    if (accessRights.length > 0) {
+    // WHATEVER CUSTOM AUTHENTICATION YOU WANT
+      if (req.header('X-MY-MAGIC-PASS') === 'ISHALLPAZZTHIS') {
+        return next();
+      }
+      return res.status(403).json({ msg: `Required one of access rights: ${accessRights}` });
+    }
+    return next();
+  });
+  mapRoutez.resetRouter();// workaround see beforeEach
+  const theRouterOpen = mapRoutes(nonAuthRoutes, 'test/fixtures/controllers/', (req, res, next) => next());
+
+  expressApp.use(`/open${randPart}`, theRouterOpen);
+  expressApp.use(`/restricted${randPart}`, theRouterRestricted);
+
+  t.truthy(theRouterOpen.stack.length === 1);
+  t.truthy(theRouterRestricted.stack.length === 3);
+
+  const username = 'MR. USER';
+  let authResponse = await request(expressApp)
+    .post(`/restricted${randPart}/user/BANGBANG`)
+    .set('Accept', /json/)
+    .set('Content-Type', 'application/json')
+    .set('X-MY-MAGIC-PASS', 'ISHALLPAZZTHIS')
+    .send({ name: username });
+  t.is(authResponse.status, 200, authResponse.text);
+  t.truthy(authResponse.text);
+  t.is(authResponse.text, 'created user: MR. USER');
+
+  authResponse = await request(expressApp)
+    .post(`/restricted${randPart}/user/BANGBANG`)
+    .set('Accept', /json/)
+    .set('Content-Type', 'application/json')
+    .send({ name: username });
+  t.is(authResponse.status, 403, authResponse.text);
+  t.truthy(authResponse.body.msg);
+  t.is(authResponse.body.msg, 'Required one of access rights: SUPER');
+
+  const openResponse = await request(expressApp)
+  .get(`/open${randPart}/userOk/`)
+  .set('Accept', /json/)
+  .set('Content-Type', 'application/json');
+  t.is(openResponse.status, 200, openResponse.text);
+  t.truthy(openResponse.text);
+  t.is(openResponse.text, 'get user');
+
+  const shouldNotBeFoundResponse = await request(expressApp)
+    .post(`/open${randPart}/user/BANGBANG`)
+    .set('Accept', /json/)
+    .set('Content-Type', 'application/json')
+    .send({ name: username });
+  t.is(shouldNotBeFoundResponse.status, 404, shouldNotBeFoundResponse.text);
+});
+

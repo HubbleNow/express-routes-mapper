@@ -5,8 +5,13 @@ import path from 'path';
 import splitByLastDot from './helpers/splitByLastDot';
 import isConstructor from './helpers/isConstrutor';
 
-const router = express.Router();
+let router = express.Router();
 const cwd = process.cwd();
+
+const resetRouter = () => {
+  router = express.Router();
+  return router;
+};
 
 const mapRoutes = (routes, pathToController, routesFunction) => {
   let requestMethodPath;
@@ -14,6 +19,7 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
 
   let controllerMethod;
   let controller;
+  let accessRightsForMethod;
   let contr;
 
   let handler;
@@ -27,8 +33,9 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
     requestMethodPath = value[0].replace(/\s\s+/g, ' ');
     requestMethod = (requestMethodPath.split(' ')[0]).toLocaleLowerCase();
     myPath = requestMethodPath.split(' ')[1];
-    controller = splitByLastDot(value[1])[0];
-    controllerMethod = splitByLastDot(value[1])[1];
+    controller = value[1].controller ? splitByLastDot(value[1].controller)[0] : splitByLastDot(value[1])[0];
+    controllerMethod = value[1].controller ? splitByLastDot(value[1].controller)[1] : splitByLastDot(value[1])[1];
+    accessRightsForMethod = value[1].accessRights || [];
 
     try {
       handler = require(`${myPathToController}${controller}`);
@@ -48,7 +55,7 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
 
     const routePath = router.route(myPath);
     if (routesFunction) {
-      routePath.all((req, res, next) => routesFunction(req, res, next));
+      routePath.all((req, res, next) => routesFunction(req, res, next, accessRightsForMethod));
     }
     if (requestMethod === 'get') {
       routePath.get(contr[controllerMethod]);
@@ -64,4 +71,4 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
   return router;
 };
 
-export default mapRoutes;
+export { mapRoutes, resetRouter };
