@@ -5,21 +5,22 @@ import path from 'path';
 import splitByLastDot from './helpers/splitByLastDot';
 import isConstructor from './helpers/isConstrutor';
 
-let router = express.Router();
+let router = express({ strict: false });// is a subapp > router
 const cwd = process.cwd();
 
 const resetRouter = () => {
-  router = express.Router();
+  router = express({ strict: false });// is a subapp > router
   return router;
 };
 
 const mapRoutes = (routes, pathToController, routesFunction) => {
+  resetRouter();
+
   let requestMethodPath;
   let requestMethod;
 
   let controllerMethod;
   let controller;
-  let accessRightsForMethod;
   let contr;
 
   let handler;
@@ -35,7 +36,7 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
     myPath = requestMethodPath.split(' ')[1];
     controller = value[1].controller ? splitByLastDot(value[1].controller)[0] : splitByLastDot(value[1])[0];
     controllerMethod = value[1].controller ? splitByLastDot(value[1].controller)[1] : splitByLastDot(value[1])[1];
-    accessRightsForMethod = value[1].accessRights || [];
+    const allowedRightsForMethod = value[1].allowAny || [];
 
     try {
       handler = require(`${myPathToController}${controller}`);
@@ -52,23 +53,18 @@ const mapRoutes = (routes, pathToController, routesFunction) => {
       handler = require(`${myPathToController}${controller}`).default;
       contr = new handler();
     }
-
-    const routePath = router.route(myPath);
-    if (routesFunction) {
-      routePath.all((req, res, next) => routesFunction(req, res, next, accessRightsForMethod));
-    }
+    const funcs = routesFunction ? [(req, res, next) => routesFunction(req, res, next, allowedRightsForMethod), contr[controllerMethod]] : [contr[controllerMethod]];
     if (requestMethod === 'get') {
-      routePath.get(contr[controllerMethod]);
+      router.get(myPath, funcs);
     } else if (requestMethod === 'post') {
-      routePath.post(contr[controllerMethod]);
+      router.post(myPath, funcs);
     } else if (requestMethod === 'put') {
-      routePath.put(contr[controllerMethod]);
+      router.put(myPath, funcs);
     } else if (requestMethod === 'delete') {
-      routePath.delete(contr[controllerMethod]);
+      router.delete(myPath, funcs);
     }
   });
-
   return router;
 };
 
-export { mapRoutes, resetRouter };
+export default mapRoutes;
