@@ -1,7 +1,7 @@
 {
-  "name": "express-routes-mapper",
+  "name": "express-sub-app-routes-mapper",
   "version": "1.1.1",
-  "description": "a small mapper for express routes",
+  "description": "a small mapper for express routes using express sub-apps",
   "main": "lib/index.js",
   "scripts": {
     "pretest": "npm run lint && npm run babel",

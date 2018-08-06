@@ -19,13 +19,13 @@ Originally forked from: https://github.com/aichbauer/express-routes-mapper#readm
 ## Install
 
 ```sh
-$ npm i -S express-routes-mapper
+$ npm i -S express-sub-app-routes-mapper
 ```
 
 or
 
 ```sh
-$ yarn add express-routes-mapper
+$ yarn add express-sub-app-routes-mapper
 ```
 
 ## Use
@@ -38,7 +38,10 @@ Create your routes file:
 
 ```js
 const routes = {
-  'POST /user': 'UserController.create'
+  'GET /user': 'UserController.get',
+  'POST /user/:name': { controller: 'UserController.create', allowAny: ['SUPER-POST', 'BASIC'] },
+  'PUT /user/:name/:id': { controller: 'UserController.update', allowAny: ['SUPER-UPDATE'] },
+  'DELETE /user/:name/:id': { controller: 'UserController.destroy', allowAny: ['SUPER-DELETE'] },
 };
 
 export default routes; // module.exports = routes;
