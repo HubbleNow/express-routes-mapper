@@ -2,14 +2,16 @@ language: node_js
 sudo: true
 dist: trusty
 node_js:
-  - "6.11"
-  - "7.10"
-  - "node"
+- '6.11'
+- '7.10'
+- node
 install:
-  - yarn
+- yarn
 script: npm run test
 notifications:
   email:
     on_failure: change
+  slack:
+    secure: Aqklz33Ydbdc3OrSXfz2dlBmFA9IVTY7kFnfGmxS3nPhP/2sTU9VyUZvkaZUJbb2KKh0SsqlLPlHYam9gVFBJSsNhL8dImekC799Q1aHxZYI3ngRLDbG65AUSuiFtzNigFcHDfTbIoAWFi2ZlTQsT7rhXoFz6ETRnkHBomB3rXj7IjSDv0DMWHXE8/Hz74IwbebcLti0UzCd3A04tLGT1gqCRwDmc846K9dXHg00FqZ9TgsrPjZ1bLKUAFy1x3Ma6CNmsgUri7hr7fvYkJu3PhU65caQyrjHZk2IjM9iCG5EXM56Tv5me9wUehyzLdrvl9R4VhHk2Ann/j230nNtF1adSMg9+3F8KiNj6XmMZ8L2/vzhM77J8igRRc2tzO0FBM/GluMHLlVow6vBmSCb8xc7s+bDB1FapfaBVJkvWAcnBmVcrYX7usEkfs6sd39zR98eXrgJ91GAEmolRGpFnri1tNZ+aTtOqoCOFF73SG3dGRd4dpWSsYJxyUtIXm8/HyRKZMXNVeeP39Zs3OrjO0oVtuJB8iwDuyibQc4VP8QkANntslmcnw7RQucD8581x3EOnowl8a8hV5Igr8Kwv8W1A/JT2AL/eK7jyI4dzAW6dYOfxcpuUwjduZQAPnmuKCvYRy4QTxRXWpZwNuXDtZ4FetKDg9qpJGSX1e1CLFw=
 after_success:
-    - './node_modules/.bin/nyc report --reporter=text-lcov | ./node_modules/.bin/coveralls'
+- "./node_modules/.bin/nyc report --reporter=text-lcov | ./node_modules/.bin/coveralls"
