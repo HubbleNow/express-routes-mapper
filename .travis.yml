@@ -4,6 +4,7 @@ dist: trusty
 node_js:
 - '6.11'
 - '7.10'
+- '10'
 - node
 install:
 - yarn

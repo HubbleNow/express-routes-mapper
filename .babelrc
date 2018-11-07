@@ -1,5 +1,5 @@
 {
-  "presets": ["es2015", "stage-0", "env"],
+  "presets": ["env"],
   "plugins": [
     "transform-runtime",
     "add-module-exports"
