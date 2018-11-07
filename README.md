@@ -1,4 +1,4 @@
-# express-routes-mapper
+# express-sub-app-routes-mapper
 
 Originally forked from: https://github.com/aichbauer/express-routes-mapper#readme 
 
